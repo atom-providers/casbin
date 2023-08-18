@@ -22,7 +22,7 @@ import (
 
 const (
 	defaultDatabaseName = "casbin"
-	defaultTableName    = "casbin_rule"
+	defaultTableName    = "permission_rules"
 )
 
 const (
@@ -30,7 +30,7 @@ const (
 	customTableKey    = "customTableKey"
 )
 
-type CasbinRule struct {
+type PermissionRule struct {
 	ID    uint   `gorm:"primaryKey;autoIncrement"`
 	Ptype string `gorm:"size:100"`
 	V0    string `gorm:"size:100"`
@@ -41,8 +41,8 @@ type CasbinRule struct {
 	V5    string `gorm:"size:100"`
 }
 
-func (CasbinRule) TableName() string {
-	return "casbin_rule"
+func (PermissionRule) TableName() string {
+	return "permission_rules"
 }
 
 type Filter struct {
@@ -367,8 +367,8 @@ func (a *Adapter) Close() error {
 }
 
 // getTableInstance return the dynamic table name
-func (a *Adapter) getTableInstance() *CasbinRule {
-	return &CasbinRule{}
+func (a *Adapter) getTableInstance() *PermissionRule {
+	return &PermissionRule{}
 }
 
 func (a *Adapter) getFullTableName() string {
@@ -429,7 +429,7 @@ func (a *Adapter) truncateTable() error {
 	return a.db.Exec(fmt.Sprintf("truncate table %s", a.getFullTableName())).Error
 }
 
-func loadPolicyLine(line CasbinRule, model model.Model) error {
+func loadPolicyLine(line PermissionRule, model model.Model) error {
 	p := []string{
 		line.Ptype,
 		line.V0, line.V1, line.V2,
@@ -451,7 +451,7 @@ func loadPolicyLine(line CasbinRule, model model.Model) error {
 
 // LoadPolicy loads policy from database.
 func (a *Adapter) LoadPolicy(model model.Model) error {
-	var lines []CasbinRule
+	var lines []PermissionRule
 	if err := a.db.Order("ID").Find(&lines).Error; err != nil {
 		return err
 	}
@@ -471,7 +471,7 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 
 // LoadFilteredPolicy loads only policy rules that match the filter.
 func (a *Adapter) LoadFilteredPolicy(model model.Model, filter interface{}) error {
-	var lines []CasbinRule
+	var lines []PermissionRule
 
 	batchFilter := BatchFilter{
 		filters: []Filter{},
@@ -541,7 +541,7 @@ func (a *Adapter) filterQuery(db *gorm.DB, filter Filter) func(db *gorm.DB) *gor
 	}
 }
 
-func (a *Adapter) savePolicyLine(ptype string, rule []string) CasbinRule {
+func (a *Adapter) savePolicyLine(ptype string, rule []string) PermissionRule {
 	line := a.getTableInstance()
 
 	line.Ptype = ptype
@@ -583,7 +583,7 @@ func (a *Adapter) SavePolicy(model model.Model) error {
 		return err
 	}
 
-	var lines []CasbinRule
+	var lines []PermissionRule
 	flushEvery := 1000
 	for ptype, ast := range model["p"] {
 		for _, rule := range ast.Policy {
@@ -637,7 +637,7 @@ func (a *Adapter) RemovePolicy(sec string, ptype string, rule []string) error {
 
 // AddPolicies adds multiple policy rules to the storage.
 func (a *Adapter) AddPolicies(sec string, ptype string, rules [][]string) error {
-	var lines []CasbinRule
+	var lines []PermissionRule
 	for _, rule := range rules {
 		line := a.savePolicyLine(ptype, rule)
 		lines = append(lines, line)
@@ -731,7 +731,7 @@ func checkQueryField(fieldValues []string) error {
 	return errors.New("the query field cannot all be empty string (\"\"), please check")
 }
 
-func (a *Adapter) rawDelete(db *gorm.DB, line CasbinRule) error {
+func (a *Adapter) rawDelete(db *gorm.DB, line PermissionRule) error {
 	queryArgs := []interface{}{line.Ptype}
 
 	queryStr := "ptype = ?"
@@ -764,7 +764,7 @@ func (a *Adapter) rawDelete(db *gorm.DB, line CasbinRule) error {
 	return err
 }
 
-func appendWhere(line CasbinRule) (string, []interface{}) {
+func appendWhere(line PermissionRule) (string, []interface{}) {
 	queryArgs := []interface{}{line.Ptype}
 
 	queryStr := "ptype = ?"
@@ -803,8 +803,8 @@ func (a *Adapter) UpdatePolicy(sec string, ptype string, oldRule, newPolicy []st
 }
 
 func (a *Adapter) UpdatePolicies(sec string, ptype string, oldRules, newRules [][]string) error {
-	oldPolicies := make([]CasbinRule, 0, len(oldRules))
-	newPolicies := make([]CasbinRule, 0, len(oldRules))
+	oldPolicies := make([]PermissionRule, 0, len(oldRules))
+	newPolicies := make([]PermissionRule, 0, len(oldRules))
 	for _, oldRule := range oldRules {
 		oldPolicies = append(oldPolicies, a.savePolicyLine(ptype, oldRule))
 	}
@@ -845,8 +845,8 @@ func (a *Adapter) UpdateFilteredPolicies(sec string, ptype string, newPolicies [
 		line.V5 = fieldValues[5-fieldIndex]
 	}
 
-	newP := make([]CasbinRule, 0, len(newPolicies))
-	oldP := make([]CasbinRule, 0)
+	newP := make([]PermissionRule, 0, len(newPolicies))
+	oldP := make([]PermissionRule, 0)
 	for _, newRule := range newPolicies {
 		newP = append(newP, a.savePolicyLine(ptype, newRule))
 	}
@@ -857,7 +857,7 @@ func (a *Adapter) UpdateFilteredPolicies(sec string, ptype string, newPolicies [
 		tx.Rollback()
 		return nil, err
 	}
-	if err := tx.Where(str, args...).Delete([]CasbinRule{}).Error; err != nil {
+	if err := tx.Where(str, args...).Delete([]PermissionRule{}).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -878,7 +878,7 @@ func (a *Adapter) UpdateFilteredPolicies(sec string, ptype string, newPolicies [
 }
 
 // Preview Pre-checking to avoid causing partial load success and partial failure deep
-func (a *Adapter) Preview(rules *[]CasbinRule, model model.Model) error {
+func (a *Adapter) Preview(rules *[]PermissionRule, model model.Model) error {
 	j := 0
 	for i, rule := range *rules {
 		r := []string{
@@ -911,7 +911,7 @@ func (a *Adapter) GetDb() *gorm.DB {
 	return a.db
 }
 
-func (c *CasbinRule) queryString() (interface{}, []interface{}) {
+func (c *PermissionRule) queryString() (interface{}, []interface{}) {
 	queryArgs := []interface{}{c.Ptype}
 
 	queryStr := "ptype = ?"
@@ -943,7 +943,7 @@ func (c *CasbinRule) queryString() (interface{}, []interface{}) {
 	return queryStr, queryArgs
 }
 
-func (c *CasbinRule) toStringPolicy() []string {
+func (c *PermissionRule) toStringPolicy() []string {
 	policy := make([]string, 0)
 	if c.Ptype != "" {
 		policy = append(policy, c.Ptype)

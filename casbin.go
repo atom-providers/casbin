@@ -13,6 +13,7 @@ import (
 )
 
 type Casbin struct {
+	model    model.Model
 	adapter  *Adapter
 	enforcer *casbin.Enforcer
 }
@@ -44,9 +45,18 @@ func Provide(opts ...opt.Option) error {
 			return nil, err
 		}
 
-		return &Casbin{adapter: a, enforcer: e}, nil
+		return &Casbin{adapter: a, enforcer: e, model: model}, nil
 	}, o.DiOptions()...)
 	return err
+}
+
+func (c *Casbin) Reload() (err error) {
+	c.enforcer, err = casbin.NewEnforcer(c.model, c.adapter)
+	if err != nil {
+		return err
+	}
+
+	return c.adapter.LoadPolicy(c.model)
 }
 
 func (c *Casbin) Check(sub, obj, act string) bool {
