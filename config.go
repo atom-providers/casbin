@@ -16,6 +16,7 @@ func DefaultProvider() container.ProviderContainer {
 	}
 }
 
-type Auth struct {
-	Model string
+type Config struct {
+	AdapterTableName string
+	Model            string
 }
