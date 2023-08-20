@@ -2,6 +2,7 @@ package casbin
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
@@ -58,8 +59,8 @@ func (c *Casbin) Reload() (err error) {
 	return c.adapter.LoadPolicy(c.model)
 }
 
-func (c *Casbin) Check(tenantID, userID int64, path, action string) bool {
-	ok, err := c.enforcer.Enforce(userID, tenantID, path, action)
+func (c *Casbin) Check(userID, tenantID int64, path, action string) bool {
+	ok, err := c.enforcer.Enforce(strconv.Itoa(int(userID)), strconv.Itoa(int(tenantID)), path, action)
 	if err != nil {
 		return false
 	}
