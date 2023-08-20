@@ -3,7 +3,6 @@ package casbin
 import (
 	"errors"
 
-	"github.com/atom-providers/log"
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
@@ -59,10 +58,9 @@ func (c *Casbin) Reload() (err error) {
 	return c.adapter.LoadPolicy(c.model)
 }
 
-func (c *Casbin) Check(sub, obj, act string) bool {
-	ok, err := c.enforcer.Enforce(sub, obj, act)
+func (c *Casbin) Check(tenantID, userID int64, path, action string) bool {
+	ok, err := c.enforcer.Enforce(userID, tenantID, path, action)
 	if err != nil {
-		log.Error(err)
 		return false
 	}
 	return ok
