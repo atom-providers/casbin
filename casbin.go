@@ -1,6 +1,7 @@
 package casbin
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,13 +37,11 @@ func Provide(opts ...opt.Option) error {
 		if err != nil {
 			return nil, err
 		}
-		e, err := casbin.NewEnforcer(model)
-		if err != nil {
+
+		casbin := &Casbin{model: model, db: db}
+		if err := casbin.Clear(); err != nil {
 			return nil, err
 		}
-
-		casbin := &Casbin{Enforcer: e, model: model, db: db}
-		casbin.Enforcer.AddFunction("is_white", casbin.FuncIsWhite)
 
 		return casbin, nil
 	}, o.DiOptions()...)
@@ -97,11 +96,21 @@ func (c *Casbin) FuncIsWhite(args ...interface{}) (interface{}, error) {
 }
 
 func (c *Casbin) Check(userID, tenantID uint64, path, action string) bool {
-	ok, err := c.Enforcer.Enforce(strconv.Itoa(int(userID)), strconv.Itoa(int(tenantID)), path, action)
+	ok, err := c.Enforcer.Enforce(strconv.Itoa(int(userID)), fmt.Sprintf("tenant:%d", tenantID), path, action)
 	if err != nil {
 		return false
 	}
 	return ok
+}
+
+func (c *Casbin) Clear() error {
+	e, err := casbin.NewEnforcer(c.model)
+	if err != nil {
+		return err
+	}
+	c.Enforcer = e
+	c.Enforcer.AddFunction("is_white", c.FuncIsWhite)
+	return nil
 }
 
 func (c *Casbin) LoadPolicies(rules [][]string) (bool, error) {
