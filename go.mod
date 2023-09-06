@@ -3,10 +3,10 @@ module github.com/atom-providers/casbin
 go 1.18
 
 require (
-	github.com/atom-providers/log v0.0.0-20230805054420-343ad809890e
 	github.com/casbin/casbin/v2 v2.75.0
 	github.com/glebarez/sqlite v1.7.0
 	github.com/rogeecn/atom v1.0.8
+	github.com/samber/lo v1.38.1
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlserver v1.5.0
@@ -46,9 +46,8 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	go.uber.org/dig v1.17.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.25.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
